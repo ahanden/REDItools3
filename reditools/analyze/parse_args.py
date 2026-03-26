@@ -35,7 +35,7 @@ def bounded_float(min=None, max=None):
     return subfn
 
 
-def build_argument_parser(): # noqa:WPS213
+def build_argument_parser(): # noqa:WPS213,WPS432
     """
     Parse commandline options for REDItools.
 
@@ -93,22 +93,22 @@ def build_argument_parser(): # noqa:WPS213
         '-mrl',
         '--min-read-length',
         type=int,
-        default=30,  # noqa:WPS432
+        default=30,
         help='Reads shorter than -mrl will be discarded.',
     )
     bqf_group.add_argument(
         '-q',
         '--min-read-quality',
         type=int,
-        default=20,  # noqa:WPS432
+        default=20,
         help='Reads with MAPQ below -q will be discarded.',
     )
     bqf_group.add_argument(
         '-bq',
         '--min-base-quality',
         type=int,
-        default=30,  # noqa:WPS432
-        help='Bases with a Phred quality score below -bq will bed discarded.',
+        default=30,
+        help='Bases with a Phred quality score below -bq will be discarded.',
     )
     bqf_group.add_argument(
         '-mbp',
@@ -184,7 +184,7 @@ def build_argument_parser(): # noqa:WPS213
         '-Men',
         '--max-editing-nucleotides',
         type=bounded_int(min=0, max=4),
-        default=4,  # noqa:WPS432
+        default=4,
         help=(
             'Positions with more than -Men unique variants (listed in the '
             'AllSubs column) will be excluded from the results.'
@@ -236,7 +236,7 @@ def build_argument_parser(): # noqa:WPS213
         '-T',
         '--strand-confidence-threshold',
         type=bounded_float(max=1),
-        default=0.7,  # noqa:WPS432
+        default=0.7,
         help=(
             'Only report the strandedness if at least -T proportion of '
             'reads are of a given strand. This option is only applicable '
@@ -253,6 +253,100 @@ def build_argument_parser(): # noqa:WPS213
             '-s/--strand is not zero.'
         ),
         action='store_true',
+    )
+    dna_group = parser.add_argument_group(
+        title='Genomic Options',
+        description=(
+            'You can analyze both RNA and DNA data simultaneously with these '
+            'options. Alternatively, you can combine already processed '
+            'results with the annotate tool.'
+        ),
+    )
+    dna_group.add_argument(
+        '-D',
+        '--dna-file',
+        help=(
+            'The DNAseq BAM file(s) to be analyzed. BAM files must be sorted '
+            'and indexed.'
+        ),
+        default=None,
+    )
+    dna_group.add_argument(
+        '-Dmrl',
+        '--dna-min-read-length',
+        help='DNA reads shorter than -mrl will be discarded.',
+        default=30,
+    )
+    dna_group.add_argument(
+        '-Dq',
+        '--dna-min-read-quality',
+        type=int,
+        default=20,
+        help='DNA reads with MAPQ below -q will be discarded.',
+    )
+    dna_group.add_argument(
+        '-Dbq',
+        '--dna-min-base-quality',
+        type=int,
+        default=30,
+        help=(
+            'DNA bases with a Phred quality score below -bq will be discarded.'
+        ),
+    )
+    dna_group.add_argument(
+        '-Dmbp',
+        '--dna-min-base-position',
+        type=bounded_int(min=0),
+        default=0,
+        help='Ignores the first -mbp bases in each DNA read.',
+    )
+    dna_group.add_argument(
+        '-DMbp',
+        '--dna-max-base-position',
+        type=bounded_int(min=0),
+        default=0,
+        help='Ignores the last -Mpb bases in each DNA read.',
+    )
+    dna_group.add_argument(
+        '-Dl',
+        '--dna-min-read-depth',
+        type=bounded_int(min=1),
+        default=1,
+        help=(
+            'Only report on DNA positions with at least -l reads (corresponds '
+            'to the Coverage column.)'
+        ),
+    )
+    dna_group.add_argument(
+        '-Dmen',
+        '--dna-min-edits-per-nucleotide',
+        type=int,
+        default=0,
+        help=(
+            'DNA Position where any variant has a frequency less than -men but '
+            'more than zero will not be reported. (Corresponds to the '
+            'BaseCount column.)'
+        ),
+    )
+    dna_group.add_argument(
+        '-Dme',
+        '--dna-min-edits',
+        type=bounded_int(0, 4),
+        default=1,
+        help=(
+            'DNA positions with fewer than -me unique variants (listed in the '
+            'AllSubs column) will be excluded from the results.'
+        ),
+    )
+    dna_group.add_argument(
+        '-DMen',
+        '--dna-max-editing-nucleotides',
+        type=bounded_int(min=0, max=4),
+        default=4,
+        help=(
+            'DNA positions with more than -Men unique variants (listed in the '
+            'AllSubs column) will be excluded from the results.'
+        ),
     )
     para_group = parser.add_argument_group(
         title='Parallel Processing Options',
@@ -406,6 +500,22 @@ def test_strand_args(args):
             '-s/--strand 0 and -C/--strand-correction are mutually exclusive.'
         )
 
+def test_dna_args(args):
+    dna_attrs = (
+        'dna_file',
+        'dna_min_read_length',
+        'dna_min_read_quality',
+        'dna_min_base_quality',
+        'dna_min_base_position',
+        'dna_max_base_position',
+        'dna_min_read_depth',
+        'dna_min_edits_per_nucleotide',
+        'dna_min_edits',
+        'dna_max_editing_nucleotides',
+    )
+    if args.dna_file is None:
+        for attr in dna_attrs:
+            delattr(args, attr)
 
 def parse_args():
     parser = build_argument_parser()
@@ -418,6 +528,7 @@ def parse_args():
 
         test_edit_frequency(args)
         test_strand_args(args)
+        test_dna_args
     except Exception as e:
         parser.error(message=str(e))
 
