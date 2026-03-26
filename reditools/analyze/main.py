@@ -11,6 +11,7 @@ from .monitor import monitor
 from .parse_args import parse_args
 from .region_args import region_args
 from .run_proc import run_proc
+from .run_combo_proc import run_combo_proc
 
 
 def main():
@@ -68,9 +69,13 @@ def main():
 
     # Start parallel jobs
     out_queue = Queue()
+    if hasattr(options, 'dna_file'):
+        target = run_combo_proc
+    else:
+        target = run_proc
     processes = [
         Process(
-            target=run_proc,
+            target=target,
             args=(options, in_queue, out_queue),
         ) for _ in range(options.threads)
     ]

@@ -2,9 +2,10 @@
 import traceback
 import sys
 
-from .setup_rna_rtools import setup_rtools
+from .setup_rtools import setup_rtools
+from .setup_rtools_dna import setup_rtools_dna
 from .setup_alignment_manager import setup_alignment_manager
-from .write_results import write_results
+from .write_combo_results import write_combo_results
 
 
 def run_combo_proc(options, in_queue, out_queue):
@@ -26,17 +27,24 @@ def run_combo_proc(options, in_queue, out_queue):
             args = in_queue.get()
             if args is None:
                 return True
-            sam_manager = setup_alignment_manager(
+            rna_sam_manager = setup_alignment_manager(
                 options.file,
                 options.min_read_quality,
                 options.min_read_length,
+                options.exclude_reads,
+            )
+            dna_sam_manager = setup_alignment_manager(
+                options.dna_file,
+                options.dna_min_read_quality,
+                options.dna_min_read_length,
                 options.exclude_reads,
             )
             idx, region = args
             file_name = write_combo_results(
                 rna_rtools,
                 dna_rtools,
-                sam_manager,
+                rna_sam_manager,
+                dna_sam_manager,
                 options.file,
                 region,
                 options.output_format,

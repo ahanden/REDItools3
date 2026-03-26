@@ -35,9 +35,6 @@ def bounded_float(min=None, max=None):
     return subfn
 
 
-<<<<<<< Updated upstream:reditools/analyze/parse_args.py
-def build_argument_parser(): # noqa:WPS213,WPS432
-=======
 def test_dna_strand_conflict(options):
     if options.strand != 0 and options.dna:
         raise Exception('Options --dna and --strand are mutually exclusive.')
@@ -65,8 +62,7 @@ def test_strand_options(options):
         )
 
 
-def parse_options():  # noqa:WPS213
->>>>>>> Stashed changes:reditools/analyze/parse_options.py
+def build_argument_parser():  # noqa:WPS213
     """
     Parse commandline options for REDItools.
 
@@ -259,13 +255,8 @@ def parse_options():  # noqa:WPS213
             'as --strand 1 and 1+-,1-+,2++,2-- should be run as --strand 2. '
             'From Salmon, forward libraries (ISF, MSF, OSF) should be run as '
             '--strand 1 and reverse libraries (ISR, MSR, OSR) as --strand 2. '
-<<<<<<< Updated upstream:reditools/analyze/parse_args.py
             'All DNA sequencing experiments, single-end experiments, and '
             'nonstranded experiments should be run with --strand 0.'
-=======
-            'All DNA sequencing experiments and single-end experiments should '
-            ' be run with --strand 0.'
->>>>>>> Stashed changes:reditools/analyze/parse_options.py
         ),
     )
     strand_group.add_argument(
@@ -285,12 +276,8 @@ def parse_options():  # noqa:WPS213
         default=False,
         help=(
             'Once the strand has been inferred, only bases according to this '
-<<<<<<< Updated upstream:reditools/analyze/parse_args.py
             'strand will be reported. This option is only applicable if '
             '-s/--strand is not zero.'
-=======
-            'strand will be selected.'
->>>>>>> Stashed changes:reditools/analyze/parse_options.py
         ),
         action='store_true',
     )
@@ -305,6 +292,7 @@ def parse_options():  # noqa:WPS213
     dna_group.add_argument(
         '-D',
         '--dna-file',
+        nargs='*',
         help=(
             'The DNAseq BAM file(s) to be analyzed. BAM files must be sorted '
             'and indexed.'
@@ -561,7 +549,6 @@ def parse_args():
     parser = build_argument_parser()
     args = parser.parse_args()
     try:
-<<<<<<< Updated upstream:reditools/analyze/parse_args.py
         check_dna_mode(args)
         check_exclude_multis(args)
         check_strict_mode(args)
@@ -569,13 +556,7 @@ def parse_args():
 
         test_edit_frequency(args)
         test_strand_args(args)
-        test_dna_args
-=======
-        test_dna_strand_conflict(options)
-        test_multis_conflict(options)
-        test_edit_frequency(options)
-        test_strand_options(options)
->>>>>>> Stashed changes:reditools/analyze/parse_options.py
+        test_dna_args(args)
     except Exception as e:
         parser.error(message=str(e))
 
