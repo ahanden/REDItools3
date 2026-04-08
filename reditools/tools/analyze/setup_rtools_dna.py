@@ -2,7 +2,7 @@ from reditools import file_utils, reditools
 from reditools.logger import Logger
 
 
-def setup_rtools_dna(options):  # noqa:WPS213,WPS231
+def setup_rtools_dna(options):
     """
     Create a REDItools object for DNA processing.
 

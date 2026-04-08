@@ -2,7 +2,7 @@
 from collections import defaultdict
 
 
-class RegionCollection(object):
+class RegionCollection:
     """Collections of REDItools3 region objects. This class is meant to
     provide fast lookups of overlaps, and so behaves as a queue."""
 
@@ -39,8 +39,9 @@ class RegionCollection(object):
         """
         if not self._sorted:
             self._sort()
-
-        if contig != self._last_contig:
+            self._last_contig = contig
+            self._index = 0
+        elif contig != self._last_contig:
             self._last_contig = contig
             self._index = 0
 
