@@ -48,13 +48,6 @@ def test_multis_conflict(options):
         )
 
 
-def test_edit_frequency(options):
-    if options.max_editing_nucleotides < options.min_edits:
-        raise Exception(
-            '-Men/--max-editing-nucleotides cannot be smaller than '
-            '-me/--min-edits.',
-        )
-
 def test_strand_options(options):
     if options.strand == 0 and options.strand_correction:
         raise Exception(
