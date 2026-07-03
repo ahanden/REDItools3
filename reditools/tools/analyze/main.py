@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import argparse
 import sys
-from multiprocessing import Process, Queue
+from functools import partial
+from multiprocessing.context import TimeoutError
+from multiprocessing.pool import Pool
 
 from reditools.logger import Logger
-from reditools.region import Region
 from reditools.tools.analyze.concat_output import concat_output
-from reditools.tools.analyze.monitor import monitor
 from reditools.tools.analyze.parse_args import parse_args
-from reditools.tools.analyze.redi_thread import redi_thread
+from reditools.tools.analyze.redi_thread import REDIThreadManager
 from reditools.tools.analyze.region_args import region_args
 
 
@@ -51,44 +51,23 @@ def setup_logger(options: argparse.Namespace) -> Logger:
         return Logger(Logger.info_level)
     return Logger(Logger.silent_level)
 
-def fill_queue(options: argparse.Namespace) -> Queue[tuple[int, Region] | None]:
+def pool_error(pool: Pool, debug: bool, exc: Exception) -> None:
     """
-    Fill the input queue with genomic regions to be analyzed.
+    Terminates a multiprocessing Pool.
 
     Parameters
     ----------
-    options : argparse.Namespace
-        The parsed command line options.
-
-    Returns
-    -------
-    Queue[tuple[int, Region] | None]
-        A queue containing indexed Region objects.
-
-    Raises
-    ------
-    SystemExit
-        If a required file is not found.
+    pool : Pool
+        mutliprocessing Pool to terminate.
+    debug : bool
+        If True, raises the exception passed in the third argument.
+    exc : Exception
+        Exception responsible for the pool to terminate.
     """
-    in_queue: Queue[tuple[int, Region] | None] = Queue()
-    try:
-        for _ in enumerate(region_args(options)):  # noqa: WPS468
-            in_queue.put(_)
-    except FileNotFoundError as exc:
-        sys.stderr.write(f'[ERROR] {exc}\n')
-        sys.exit(1)
-
-    # Check thread count
-    if in_queue.qsize() < options.threads:
-        sys.stderr.write(
-            "[WARNING] You have assigned more threads "
-            f"({options.threads}) than there are genomic ranges "
-            f"({in_queue.qsize()})\n",
-        )
-        options.threads = in_queue.qsize()
-    for _ in range(options.threads):
-        in_queue.put(None)
-    return in_queue
+    pool.terminate()
+    if debug:
+        raise exc.__cause__  # type: ignore[misc]
+    sys.stderr.write(f'[ERROR] ({type(exc)}) {exc}\n')
 
 def main() -> None:
     """
@@ -107,19 +86,36 @@ def main() -> None:
 
     options.encoding = 'utf-8'
 
-    in_queue = fill_queue(options)
+    regions = region_args(options)
 
-    # Start parallel jobs
-    out_queue: Queue[tuple[int, str]] = Queue()
-    processes = []
-    for _ in range(options.threads):
-        processes.append(Process(
-            target=redi_thread,
-            args=(options, in_queue, out_queue),
-        ))
+    if options.threads > len(regions):
+        sys.stderr.write(
+            f"[WARNING] You have assigned {options.threads} threads, "
+            f"But there are only {len(regions)} genomic range(s). "
+            "Consider change the value of --window\n"
+        )
+        options.threads = len(regions)
+    try:
+        with Pool(
+            options.threads,
+            REDIThreadManager.init_thread,
+            (options,),
+        ) as pool:
+            imap_iter = [
+                pool.apply_async(
+                    REDIThreadManager.analyze,
+                    args=(region,),
+                    error_callback=partial(pool_error, pool, options.debug),
+                ) for region in regions
+            ]
+            pool.close()
+            pool.join()
+            temp_files = [_.get(1) for _ in imap_iter]
+    except (TimeoutError, IndexError):
+        sys.exit(1)
 
     concat_output(
-        monitor(processes, out_queue, in_queue.qsize()),
+        temp_files,
         options.output_file,
         'a' if options.append_file else 'w',
         options.encoding,
