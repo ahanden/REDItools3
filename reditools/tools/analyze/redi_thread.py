@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 
 from reditools.region import Region
 from reditools.tools.analyze.rtchecks import RTChecks
@@ -30,23 +31,21 @@ class REDIThread:
     def analyze(
             self,
             region: Region,
-    ) -> str:
+            filename: str,
+    ) -> None:
         """Analyze a specific genomic region.
 
         Parameters
         ----------
         region : Region
             The genomic region to analyze.
-
-        Returns
-        -------
-        str
-            The path to the temporary file containing the results.
+        filename : str
+            Path to save output to.
         """
         rtresults = self.rtools.analyze(self.sam_manager, region)
         return write_results(
             rtresults,
-            self.temp_dir,
+            filename,
             self.rtqc,
             self.rtools.log,
         )
@@ -69,20 +68,20 @@ class REDIThreadManager:
         cls.thread = REDIThread(options)
 
     @classmethod
-    def analyze(cls, region: Region) -> str:
+    def analyze(cls, region: Region, filename: str) -> None:
         """Instruct thread to analyze a specific genomic region.
 
         Parameters
         ----------
         region : Region
             The genomic region to analyze.
-
-        Returns
-        -------
-        str
-            The path to the temporary file containing the results.
+        filename : str
+            Path to save output to.
         """
 
         if cls.thread is None:
             raise AttributeError('REDIThreadManager not initialized.')
-        return cls.thread.analyze(region)
+        done_file = f'{filename}.done'
+        if not Path(done_file).exists():
+            cls.thread.analyze(region, filename)
+            Path(done_file).touch()

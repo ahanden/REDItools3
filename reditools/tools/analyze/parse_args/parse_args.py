@@ -3,6 +3,7 @@ import tempfile
 from typing import Callable
 
 from reditools import reditools
+from reditools.tools.analyze.parse_args.json_args import args_from_json
 
 
 def check_number_bounds(
@@ -127,6 +128,14 @@ def build_argument_parser() -> argparse.ArgumentParser:  # noqa: WPS213, WPS210
             'Only analyzes the specified samtools formatted region. '
             '(1-index, start and end inclusive).'
         ),
+    )
+    parser.add_argument(
+        '--resume',
+        help=(
+            'If REDItools crashed, will attempt to resume a stopped job from '
+            'existing temporary files. Note: --temp-dir is required.'
+        ),
+        action='store_true',
     )
     output_group = parser.add_argument_group(
         title='Output Options',
@@ -489,6 +498,17 @@ def parse_args(sys_args: list[str] | None = None) -> argparse.Namespace:
     """
     parser = build_argument_parser()
     args = parser.parse_args(sys_args)
+
+    if args.resume:
+        temp_dir = args.temp_dir
+        try:
+            args = args_from_json(temp_dir)
+        except Exception as exc:
+            parser.error(f'Unable to resume analysis.\n{exc}')
+        args.resume = True
+        args.temp_dir = temp_dir
+        return args
+
     try:
         fix_legacy_options(args)
     except Exception as exc:
@@ -506,3 +526,21 @@ def parse_args(sys_args: list[str] | None = None) -> argparse.Namespace:
         )
 
     return args
+
+def args_to_string(args: argparse.Namespace) -> str:
+    """
+    Convert argparse options to a comma-separated string of key:value pairs.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        The parsed command line options.
+
+    Returns
+    -------
+    str
+        A string representation of the options.
+    """
+    return ", ".join(
+        [f"{_}:{getattr(args, _)}" for _ in vars(args)],  # noqa: WPS421
+    )
