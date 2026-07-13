@@ -1,16 +1,21 @@
+"""A wrapper around pysam.AlignmentFile with integrated quality control."""
+from __future__ import annotations
 
-from types import TracebackType
-from typing import Any, Collection, Iterator
+from typing import TYPE_CHECKING
 
-from pysam import AlignedSegment
 from pysam.libcalignmentfile import AlignmentFile as PysamAlignmentFile
 
-from reditools.region import Region
+if TYPE_CHECKING:
+    from types import TracebackType
+    from typing import Any, Collection, Iterator
+
+    from pysam import AlignedSegment
+
+    from reditools.region import Region
 
 
 class ReadQC:
-    """
-    Perform quality control checks on aligned reads.
+    """Perform quality control checks on aligned reads.
 
     Parameters
     ----------
@@ -21,16 +26,16 @@ class ReadQC:
     excluded_read_names : Collection[str] | None
         A collection of read names to be excluded.
     """
-    _flags_to_keep = {0, 16, 83, 99, 147, 163}
+
+    _flags_to_keep = frozenset((0, 16, 83, 99, 147, 163))
 
     def __init__(
             self,
             min_quality: int,
             min_length: int,
             excluded_read_names: Collection[str] | None,
-    ):
-        """
-        Initialize the ReadQC with quality and length thresholds.
+    ) -> None:
+        """Initialize the ReadQC with quality and length thresholds.
 
         Parameters
         ----------
@@ -43,20 +48,20 @@ class ReadQC:
         """
         self.min_quality = min_quality
         self.min_length = min_length
-        self.excluded_read_names = excluded_read_names
 
         self.check_list = [self.check_baseline]
         if self.min_quality > 0:
             self.check_list.append(self.check_quality)
         if self.min_length > 0:
             self.check_list.append(self.check_length)
-        if self.excluded_read_names:
-            self.excluded_read_names = set(self.excluded_read_names)
+        if excluded_read_names:
+            self.excluded_read_names = set(excluded_read_names)
             self.check_list.append(self.check_excluded_read_names)
+        else:
+            self.excluded_read_names = set()
 
     def check_baseline(self, read: AlignedSegment) -> bool:
-        """
-        Check if the read passes baseline flag and tag requirements.
+        """Check if the read passes baseline flag and tag requirements.
 
         Parameters
         ----------
@@ -68,11 +73,10 @@ class ReadQC:
         bool
             True if the read passes, False otherwise.
         """
-        return read.flag in self._flags_to_keep and not read.has_tag('SA')
-    
+        return read.flag in self._flags_to_keep and not read.has_tag("SA")
+
     def check_quality(self, read: AlignedSegment) -> bool:
-        """
-        Check if the read passes the minimum mapping quality threshold.
+        """Check if the read passes the minimum mapping quality threshold.
 
         Parameters
         ----------
@@ -87,8 +91,7 @@ class ReadQC:
         return read.mapping_quality >= self.min_quality
 
     def check_length(self, read: AlignedSegment) -> bool:
-        """
-        Check if the read passes the minimum length threshold.
+        """Check if the read passes the minimum length threshold.
 
         Parameters
         ----------
@@ -103,8 +106,7 @@ class ReadQC:
         return read.query_length >= self.min_length
 
     def check_excluded_read_names(self, read: AlignedSegment) -> bool:
-        """
-        Check if the read name is not in the excluded list.
+        """Check if the read name is not in the excluded list.
 
         Parameters
         ----------
@@ -116,11 +118,10 @@ class ReadQC:
         bool
             True if the read name is not excluded, False otherwise.
         """
-        return read.query_name not in self.excluded_read_names  # type: ignore
+        return read.query_name not in self.excluded_read_names
 
     def run_check(self, read: AlignedSegment) -> bool:
-        """
-        Run all configured quality control checks on the read.
+        """Run all configured quality control checks on the read.
 
         Parameters
         ----------
@@ -136,8 +137,7 @@ class ReadQC:
 
 
 class RTAlignmentFile:
-    """
-    A wrapper around pysam.AlignmentFile with integrated quality control.
+    """A wrapper around pysam.AlignmentFile with integrated quality control.
 
     Parameters
     ----------
@@ -159,10 +159,9 @@ class RTAlignmentFile:
             min_quality: int=0,
             min_length: int=0,
             excluded_read_names: Collection[str] | None=None,
-            **kwargs: Any,
+            **kwargs: Any,  # noqa: ANN401
     ) -> None:
-        """
-        Initialize the RTAlignmentFile.
+        """Initialize the RTAlignmentFile.
 
         Parameters
         ----------
@@ -177,14 +176,17 @@ class RTAlignmentFile:
         **kwargs
             Keyword arguments passed to pysam.AlignmentFile.
         """
-        kwargs['ignore_truncation'] = True
+        kwargs["ignore_truncation"] = True
         self.alignment_file = PysamAlignmentFile(filename, **kwargs)
         self.alignment_file.check_index()
-        self.readqc = ReadQC(min_quality, min_length, excluded_read_names)
+        if excluded_read_names is None:
+            excluded_names: Collection[str] = []
+        else:
+            excluded_names = excluded_read_names
+        self.readqc = ReadQC(min_quality, min_length, excluded_names)
 
-    def __enter__(self):  # type: ignore
-        """
-        Enter the runtime context related to this object.
+    def __enter__(self) -> RTAlignmentFile:
+        """Enter the runtime context related to this object.
 
         Returns
         -------
@@ -195,20 +197,19 @@ class RTAlignmentFile:
 
     def __exit__(
         self,
-        exc_type: type,
-        exc_value: Exception,
-        traceback: TracebackType,
+        typ: type[BaseException] | None,
+        exc:  BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
-        """
-        Exit the runtime context related to this object.
+        """Exit the runtime context related to this object.
 
         Parameters
         ----------
-        exc_type : type | None
+        typ : type[BaseException] | None
             The exception type.
-        exc_value : Exception | None
+        exc : BaseException | None
             The exception value.
-        traceback : TracebackType | None
+        tb : TracebackType | None
             The traceback.
         """
         self.alignment_file.close()
@@ -217,9 +218,7 @@ class RTAlignmentFile:
         self,
         region: Region | str,
     ) -> Iterator[list[AlignedSegment]]:
-        """
-        Fetch reads from the alignment file grouped by their reference start
-        position.
+        """Fetch reads from the alignment file grouped by reference start.
 
         Parameters
         ----------

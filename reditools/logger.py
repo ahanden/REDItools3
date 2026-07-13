@@ -1,3 +1,4 @@
+"""Handle logging operations with different severity levels."""
 import os
 import socket
 import sys
@@ -6,8 +7,7 @@ from typing import Any
 
 
 class Logger:
-    """
-    Handle logging operations with different severity levels.
+    """Handle logging operations with different severity levels.
 
     Attriutes
     ----------
@@ -19,13 +19,12 @@ class Logger:
         Output all messages
     """
 
-    silent_level = 'SILENT'
-    info_level = 'INFO'
-    debug_level = 'DEBUG'
+    silent_level = "SILENT"
+    info_level = "INFO"
+    debug_level = "DEBUG"
 
-    def __init__(self, level: str):
-        """
-        Initialize the Logger with a specified logging level.
+    def __init__(self, level: str) -> None:
+        """Initialize the Logger with a specified logging level.
 
         Parameters
         ----------
@@ -33,9 +32,13 @@ class Logger:
             The logging level ('SILENT', 'INFO', or 'DEBUG').
         """
         hostname = socket.gethostname()
-        ip_addr = socket.gethostbyname(hostname)
         pid = os.getpid()
-        self.hostname_string = f'{hostname}|{ip_addr}|{pid}'
+        try:
+            ip_addr = socket.gethostbyname(hostname)
+        except socket.gaierror:
+            self.hostname_string = f"{hostname}|{pid}"
+        else:
+            self.hostname_string = f"{hostname}|{ip_addr}|{pid}"
         self._level = level.upper()
 
         if self._level == self.debug_level:
@@ -45,7 +48,12 @@ class Logger:
         else:
             self._log_fn = self._log_silent
 
-    def log(self, level: str, message: str, *args: Any) -> None:
+    def log(
+        self,
+        level: str,
+        message: str,
+        *args: Any,  # noqa: ANN401
+    ) -> None:
         """Conditionally output a message to STDERR.
 
         Parameters
@@ -61,8 +69,7 @@ class Logger:
 
     @property
     def level(self) -> str:
-        """
-        Get the current logging level.
+        """Get the current logging level.
 
         Returns
         -------
@@ -71,17 +78,32 @@ class Logger:
         """
         return self._level
 
-    def _log_all(self, level: str, message: str, *args: Any) -> None:
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    def _log_all(
+        self,
+        level: str,
+        message: str,
+        *args: Any,  # noqa: ANN401
+    ) -> None:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # noqa: DTZ005
         message = message.format(*args)
         sys.stderr.write(
-            f'{timestamp} [{self.hostname_string}] ' +
-            f'[{level}] {message}\n',
+            f"{timestamp} [{self.hostname_string}] "
+            f"[{level}] {message}\n",
         )
 
-    def _log_info(self, level: str, message: str, *args: Any) -> None:
+    def _log_info(
+        self,
+        level: str,
+        message: str,
+        *args: Any,  # noqa: ANN401
+    ) -> None:
         if level == self.info_level:
             self._log_all(level, message, *args)
 
-    def _log_silent(self, level: str, message: str, *args: Any) -> None:
+    def _log_silent(
+        self,
+        level: str,
+        message: str,
+        *args: Any,  # noqa: ANN401
+    ) -> None:
         pass  # noqa: WPS420

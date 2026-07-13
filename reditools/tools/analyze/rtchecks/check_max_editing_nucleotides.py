@@ -1,7 +1,12 @@
-import argparse
+"""Check if a position has at most a certain number of editing nucleotides."""
+from __future__ import annotations
 
-from reditools.compiled_position import RTResult
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    import argparse
+
+    from reditools.compiled_position import RTResult
 
 class CheckMaxEditingNucleotides:
     """Check if a position has at most a certain number of editing nucleotides.
@@ -12,7 +17,7 @@ class CheckMaxEditingNucleotides:
         The maximum allowed number of editing nucleotides.
     """
 
-    def __init__(self, options: argparse.Namespace):
+    def __init__(self, options: argparse.Namespace) -> None:
         """Initialize CheckMaxEditingNucleotides.
 
         Parameters
@@ -36,7 +41,7 @@ class CheckMaxEditingNucleotides:
         bool
             True if max_editing_nucleotides < 3, False otherwise.
         """
-        return options.max_editing_nucleotides < 3
+        return options.max_editing_nucleotides < 3  # noqa: PLR2004
 
     def run_check(self, rtresult: RTResult) -> None | tuple:
         """Run the check on a specific position.
@@ -55,7 +60,7 @@ class CheckMaxEditingNucleotides:
         variants = rtresult.variants
         if len(variants) > self.max_editing_nucleotides:
             return (
-                'DISCARD COLUMN variants={} > {}',
+                "DISCARD COLUMN variants={} > {}",
                 len(variants),
                 self.max_editing_nucleotides,
             )

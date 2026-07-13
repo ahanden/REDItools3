@@ -1,20 +1,21 @@
+"""File handling utilities."""
+from __future__ import annotations
 
 import csv
-import os
 import tempfile
 from gzip import open as gzip_open
+from pathlib import Path
 from typing import IO, Iterator
 
 from reditools.region import Region
 
 
-def open_stream(  # type: ignore
+def open_stream(  # type: ignore[no-untyped-def] # noqa: ANN201
         path: str,
-        mode: str='rt',
-        encoding: str='utf-8',
+        mode: str="rt",
+        encoding: str="utf-8",
 ):
-    """
-    Open a file stream, handling both plain and gzipped files.
+    """Open a file stream, handling both plain and gzipped files.
 
     Parameters
     ----------
@@ -30,14 +31,12 @@ def open_stream(  # type: ignore
     file-like object
         The opened file stream.
     """
-    if path.endswith('gz'):
+    if path.endswith("gz"):
         return gzip_open(path, mode, encoding=encoding)
-    return open(path, mode, encoding=encoding)  # noqa: WPS515
-
+    return Path(path).open(mode, encoding=encoding)  # noqa: WPS515 SIM115
 
 def read_bed_file(*path: str) -> Iterator[Region]:
-    """
-    Read genomic regions from one or more BED files.
+    """Read genomic regions from one or more BED files.
 
     Parameters
     ----------
@@ -53,8 +52,8 @@ def read_bed_file(*path: str) -> Iterator[Region]:
         yield from read_bed_file(*path[1:])
     with open_stream(path[0]) as stream:
         reader = csv.reader(
-            filter(lambda row: row[0] != '#', stream),
-            delimiter='\t',
+            filter(lambda row: row[0] != "#", stream),
+            delimiter="\t",
         )
         for row in reader:
             yield Region(
@@ -68,10 +67,9 @@ def concat(
         output: IO,
         *fnames: str,
         clean_up: bool=True,
-        encoding: str='utf-8',
+        encoding: str="utf-8",
 ) -> None:
-    """
-    Concatenate multiple files into a single output stream.
+    """Concatenate multiple files into a single output stream.
 
     Parameters
     ----------
@@ -86,16 +84,14 @@ def concat(
         The encoding to use when reading files (default is 'utf-8').
     """
     for fname in fnames:
-        with open(fname, 'r', encoding=encoding) as stream:
-            for line in stream:
-                output.write(line)
+        with Path(fname).open("r", encoding=encoding) as stream:
+            output.writelines(stream)
         if clean_up:
-            os.remove(fname)
+            Path(fname).unlink()
 
 
 def load_text_file(file_name: str) -> list[str]:
-    """
-    Load lines from a text file into a list, stripping whitespace.
+    """Load lines from a text file into a list, stripping whitespace.
 
     Parameters
     ----------
@@ -107,18 +103,17 @@ def load_text_file(file_name: str) -> list[str]:
     list[str]
         A list of stripped lines from the file.
     """
-    with open_stream(file_name, 'r') as stream:
+    with open_stream(file_name, "r") as stream:
         return [line.strip() for line in stream]
 
-def make_dir(prefix: str | None=None, dir: str | None=None) -> str:
-    """
-    Creates a folder.
+def make_dir(prefix: str | None=None, dirname: str | None=None) -> str:
+    """Create a folder.
 
     Parameters
     ----------
     prefix : str
         Filename prefix.
-    dir : str
+    dirname : str
         Path to folder parent.
 
     Returns
@@ -126,8 +121,8 @@ def make_dir(prefix: str | None=None, dir: str | None=None) -> str:
     str
         Path to the folder.
     """
-    with tempfile.NamedTemporaryFile(prefix=prefix, dir=dir) as stream:
+    with tempfile.NamedTemporaryFile(prefix=prefix, dir=dirname) as stream:
         valid_name = stream.name
-    os.mkdir(valid_name)
+    Path(valid_name).mkdir()
     return valid_name
 

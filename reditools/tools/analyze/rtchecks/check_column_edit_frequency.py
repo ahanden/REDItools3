@@ -1,6 +1,12 @@
-import argparse
+"""Check if a position has a minimum number of total edits."""
+from __future__ import annotations
 
-from reditools.compiled_position import RTResult
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import argparse
+
+    from reditools.compiled_position import RTResult
 
 
 class CheckColumnEditFrequency:
@@ -12,7 +18,7 @@ class CheckColumnEditFrequency:
         The minimum required total edits.
     """
 
-    def __init__(self, options: argparse.Namespace):
+    def __init__(self, options: argparse.Namespace) -> None:
         """Initialize CheckColumnEditFrequency.
 
         Parameters
@@ -52,10 +58,10 @@ class CheckColumnEditFrequency:
             None if total edits are sufficient, a tuple with error message
             otherwise.
         """
-        edits_no = len(rtresult) - rtresult['REF']
+        edits_no = len(rtresult) - rtresult["REF"]
         if edits_no < self.min_edits:
             return (
-                'DISCARDING COLUMN edits={} < {}',
+                "DISCARDING COLUMN edits={} < {}",
                 edits_no,
                 self.min_edits,
             )

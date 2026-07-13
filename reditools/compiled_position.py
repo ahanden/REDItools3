@@ -1,5 +1,11 @@
+"""Class to store compiled information for a specific genomic position."""
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Iterator
+
+from reditools.constants import bases as base_order
+from reditools.constants import comp_map
 
 
 @dataclass
@@ -28,8 +34,6 @@ class CompiledPosition:
     qualities: list[int] = field(default_factory=list)
     strands: list[str] = field(default_factory=list)
     bases: list[str] = field(default_factory=list)
-
-    _comp = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
 
     def __len__(self) -> int:
         """Return the number of bases at this position.
@@ -74,17 +78,17 @@ class CompiledPosition:
         pos_count = 0
         neg_count = 0
         for strand in self.strands:
-            if strand == '+':
+            if strand == "+":
                 pos_count += 1
-            elif strand == '-':
+            elif strand == "-":
                 neg_count += 1
         if pos_count == neg_count:
-            return '*'
+            return "*"
         if pos_count / (pos_count + neg_count) >= threshold:
-            return '+'
+            return "+"
         if neg_count / (pos_count + neg_count) >= threshold:
-            return '-'
-        return '*'
+            return "-"
+        return "*"
 
     def filter_by_strand(self, strand: str) -> None:
         """Filter observations to keep only those from a specific strand.
@@ -94,7 +98,7 @@ class CompiledPosition:
         strand : str
             The strand to keep ('+', '-', or '*'). If '*', no filtering is done.
         """
-        if strand == '*':
+        if strand == "*":
             return
         keep = [
             idx for idx in range(len(self.bases))
@@ -106,8 +110,8 @@ class CompiledPosition:
 
     def complement(self) -> None:
         """Replace all bases and the reference with their complements."""
-        self.bases = [self._comp[base] for base in self.bases]
-        self.ref = self._comp[self.ref]
+        self.bases = [comp_map[base] for base in self.bases]
+        self.ref = comp_map[self.ref]
 
 
 class RTResult:
@@ -131,9 +135,11 @@ class RTResult:
         A list of observed variants (e.g., ['AG']).
     """
 
-    _base_order = 'ACGT'
-
-    def __init__(self, compiled_position: CompiledPosition, strand: str):
+    def __init__(
+        self,
+        compiled_position: CompiledPosition,
+        strand: str,
+    ) -> None:
         """Initialize RTResult.
 
         Parameters
@@ -150,12 +156,12 @@ class RTResult:
         self.position = self.cp.position
         self.contig = self.cp.contig
 
-        self.counter = {_: 0 for _ in self._base_order}
+        self.counter = dict.fromkeys(base_order, 0)
         for base in self.cp.bases:
             self.counter[base] += 1
 
         self.variants = [
-            f'{self.reference}{_}' for _ in self._base_order
+            f"{self.reference}{_}" for _ in base_order
             if self[_] and _ != self.reference
         ]
 
@@ -172,7 +178,7 @@ class RTResult:
         int
             The count of the requested base.
         """
-        if base.upper() == 'REF':
+        if base.upper() == "REF":
             return self.counter[self.reference]
         return self.counter[base]
 
@@ -182,9 +188,9 @@ class RTResult:
         Yields
         ------
         int
-            The count of each base in order: 'A, 'C', 'G', 'T'.
+            The count of each base in order: "A", "C", "G", "T".
         """
-        return (self[base] for base in self._base_order)
+        return (self[base] for base in base_order)
 
     def __len__(self) -> int:
         """Return the total number of reads at this position.
@@ -209,11 +215,11 @@ class RTResult:
             The editing ratio.
         """
         max_edits = 0
-        for base, count in zip(self._base_order, self):
+        for base, count in zip(base_order, self):
             if base != self.reference and count > max_edits:
                 max_edits = count
         try:
-            return max_edits / (self['REF'] + max_edits)
+            return max_edits / (self["REF"] + max_edits)
         except ZeroDivisionError:
             return 0
 

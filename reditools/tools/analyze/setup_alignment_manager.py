@@ -1,3 +1,6 @@
+"""Initalized and configure ALignmentManager objects for the analyze tool."""
+from __future__ import annotations
+
 from reditools import file_utils
 from reditools.alignment_manager import AlignmentManager
 

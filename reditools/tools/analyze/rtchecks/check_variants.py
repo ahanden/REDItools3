@@ -1,12 +1,31 @@
-import argparse
+"""Check if detected variants match specified allowed variants."""
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
-from reditools.compiled_position import RTResult
+if TYPE_CHECKING:
+    import argparse
 
+    from reditools.compiled_position import RTResult
+
+
+class BadVariantError(ValueError):
+    """Variant string is improperly formatted."""
+
+    def __init__(self, bad_alt: str) -> None:
+        """Initialize self.
+
+        Parameters
+        ----------
+        bad_alt : str
+            The offending variant string.
+        """
+        self.message = f"Bad variant ({bad_alt}). Must be two bases (e.g. AG)."
+        super().__init__(self.message)
 
 class CheckVariants:
-    """
-    Check if detected variants match specified allowed variants.
+    """Check if detected variants match specified allowed variants.
 
     Parameters
     ----------
@@ -14,9 +33,8 @@ class CheckVariants:
         Command-line options containing allowed variants.
     """
 
-    def __init__(self, options: argparse.Namespace):
-        """
-        Initialize CheckVariants with allowed variants.
+    def __init__(self, options: argparse.Namespace) -> None:
+        """Initialize CheckVariants with allowed variants.
 
         Parameters
         ----------
@@ -25,24 +43,21 @@ class CheckVariants:
 
         Raises
         ------
-        ValueError
+        BadVariantError
             If a variant is not exactly two bases (e.g., 'AG').
         """
-        pa = re.compile('[ATCG]{2}', re.IGNORECASE)
+        pa = re.compile("[ATCG]{2}", re.IGNORECASE)
         bad_alt = next(
             (_ for _ in options.variants if not pa.fullmatch(_)),
             None,
         )
         if bad_alt is not None:
-            raise ValueError(
-                f'Bad variant ({bad_alt}). Must be two bases (e.g. AG).'
-            )
+            raise BadVariantError(bad_alt)
         self.variants = {_.upper() for _ in options.variants}
 
     @classmethod
     def is_needed(cls, options: argparse.Namespace) -> bool:
-        """
-        Determine if the variant check is required.
+        """Determine if the variant check is required.
 
         Parameters
         ----------
@@ -55,11 +70,10 @@ class CheckVariants:
             True if specific variants are required, False if 'ALL' is in the
             variant list.
         """
-        return 'ALL' not in [_.upper() for _ in options.variants]
+        return "ALL" not in [_.upper() for _ in options.variants]
 
     def run_check(self, rtresult: RTResult) -> None | tuple:
-        """
-        Verify that detected variants are among the allowed ones.
+        """Verify that detected variants are among the allowed ones.
 
         Parameters
         ----------
@@ -75,7 +89,7 @@ class CheckVariants:
         if any(_ in self.variants for _ in rtresult.variants):
             return None
         return (
-            'DISCARD COLUMN Edits {} not in requested alts {}',
+            "DISCARD COLUMN Edits {} not in requested alts {}",
             rtresult.variants,
             self.variants,
         )

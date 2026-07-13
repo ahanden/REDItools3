@@ -1,3 +1,7 @@
+"""Entry point for annotate tool."""
+
+from __future__ import annotations
+
 import csv
 import sys
 import traceback
@@ -8,7 +12,21 @@ from reditools import file_utils
 from reditools.rtannotater import RTAnnotater
 from reditools.tools.annotate.parse_args import parse_args
 
-_contig = 'Region'
+_contig = "Region"
+
+class UnsortedInputError(ValueError):
+    """REDItools output file is unsorted."""
+
+    def __init__(self, file_name: str) -> None:
+        """Initialize self.
+
+        Parameters
+        ----------
+        file_name : str
+            The name of the unsorted file.
+        """
+        self.message = f"File {file_name} does not appear to be in sorted order"
+        super().__init__(self.message)
 
 def contig_order_from_bam(bam_fname: str) -> dict[str, int]:
     """Get contig order from a BAM file.
@@ -23,11 +41,11 @@ def contig_order_from_bam(bam_fname: str) -> dict[str, int]:
     dict[str, int]
         A dictionary mapping contig names to their 1-based order.
     """
-    contigs = {}
     with pysam.AlignmentFile(bam_fname, ignore_truncation=True) as bam:
-        for idx, contig in enumerate(bam.references, start=1):
-            contigs[contig] = idx
-    return contigs
+        return {
+            contig: idx
+            for idx, contig in enumerate(bam.references, start=1)
+        }
 
 def contig_order_from_fai(fai_fname: str) -> dict[str, int]:
     """Get contig order from a FASTA index file.
@@ -43,9 +61,9 @@ def contig_order_from_fai(fai_fname: str) -> dict[str, int]:
         A dictionary mapping contig names to their 1-based order.
     """
     contigs = {}
-    with file_utils.open_stream(fai_fname, 'r') as stream:
+    with file_utils.open_stream(fai_fname, "r") as stream:
         for idx, line in enumerate(stream, start=1):
-            contig = line.split('\t')[0]
+            contig = line.split("\t")[0]
             contigs[contig] = idx
     return contigs
 
@@ -64,20 +82,17 @@ def contig_order_from_out(out_fname: str) -> dict[str, int]:
 
     Raises
     ------
-    ValueError
+    UnsortedInputError
         If the file does not appear to be in sorted order.
     """
     contigs: dict[str, int] = {}
-    with file_utils.open_stream(out_fname, 'r') as stream:
-        reader = csv.DictReader(stream, delimiter='\t')
+    with file_utils.open_stream(out_fname, "r") as stream:
+        reader = csv.DictReader(stream, delimiter="\t")
         last_contig = None
         for row in reader:
             if row[_contig] != last_contig:
                 if row[_contig] in contigs:
-                    raise ValueError(
-                        f'File {out_fname} does not appear to be in sorted '
-                        'order.'
-                    )
+                    raise UnsortedInputError(out_fname)
                 contigs[row[_contig]] = len(contigs) + 1
                 last_contig = row[_contig]
     return contigs
@@ -98,20 +113,20 @@ def main() -> None:
         else:
             order_fname = options.rna_file
             contig_order = contig_order_from_out(options.rna_file)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         if options.debug:
             traceback.print_exception(*sys.exc_info())
         sys.stderr.write(
-            '[ERROR] There was an error getting the contig order from '
-            f'{order_fname}: ({type(exc)}) {exc}\n'
+            "[ERROR] There was an error getting the contig order from "
+            f"{order_fname}: ({type(exc)}) {exc}\n",
         )
         sys.exit(1)
 
     rta = RTAnnotater(contig_order, options.strand_correction)
     try:
         rta.annotate(options.rna_file, options.dna_file, sys.stdout)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         if options.debug:
             traceback.print_exception(*sys.exc_info())
-        sys.stderr.write(f'[ERROR] ({type(exc)}) {exc}\n')
+        sys.stderr.write(f"[ERROR] ({type(exc)}) {exc}\n")
         sys.exit(1)

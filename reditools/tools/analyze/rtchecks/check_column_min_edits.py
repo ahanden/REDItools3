@@ -1,10 +1,19 @@
-import argparse
+"""Check if a position has a minimum number of edits per nucleotide."""
+from __future__ import annotations
 
-from reditools.compiled_position import RTResult
+from typing import TYPE_CHECKING
+
+from reditools.constants import bases
+
+if TYPE_CHECKING:
+    import argparse
+
+    from reditools.compiled_position import RTResult
 
 
 class CheckColumnMinEdits:
     """Check if a position has a minimum number of edits per nucleotide.
+
     Specifically, checks that all non-zero, non-reference bases pass a
     given threshold.
 
@@ -14,9 +23,7 @@ class CheckColumnMinEdits:
         The minimum required edits per nucleotide.
     """
 
-    _bases = ('A', 'T', 'C', 'G')
-
-    def __init__(self, options: argparse.Namespace):
+    def __init__(self, options: argparse.Namespace) -> None:
         """Initialize CheckColumnMinEdits.
 
         Parameters
@@ -56,11 +63,11 @@ class CheckColumnMinEdits:
             None if all nucleotide edits are sufficient, a tuple with
             error message otherwise.
         """
-        for base in self._bases:
+        for base in bases:
             if base != rtresult.reference and \
                     0 < rtresult[base] < self.min_edits_per_nucleotide:
                 return (
-                    'DISCARDING COLUMN edits={} < {}',
+                    "DISCARDING COLUMN edits={} < {}",
                     rtresult[base],
                     self.min_edits_per_nucleotide,
                 )

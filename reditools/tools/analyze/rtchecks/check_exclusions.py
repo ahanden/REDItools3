@@ -1,10 +1,16 @@
-import argparse
+"""Check if a position is within excluded regions."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from reditools import file_utils
-from reditools.compiled_position import RTResult
 from reditools.region_collection import RegionCollection
 from reditools.splicing_file import load_splicing_file
 
+if TYPE_CHECKING:
+    import argparse
+
+    from reditools.compiled_position import RTResult
 
 class CheckExclusions:
     """Check if a position is within excluded regions.
@@ -15,7 +21,7 @@ class CheckExclusions:
         The collection of excluded regions.
     """
 
-    def __init__(self, options: argparse.Namespace):
+    def __init__(self, options: argparse.Namespace) -> None:
         """Initialize CheckExclusions.
 
         Parameters
@@ -68,5 +74,5 @@ class CheckExclusions:
             error message otherwise.
         """
         if self.regions.contains(rtresult.contig, rtresult.position):
-            return ('DISCARD COLUMN in excluded region',)
+            return ("DISCARD COLUMN in excluded region",)
         return None

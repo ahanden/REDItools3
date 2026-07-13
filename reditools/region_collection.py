@@ -1,27 +1,27 @@
-from collections import defaultdict
-from typing import DefaultDict, Iterable
+"""A collection of genomic regions, providing efficient ordered lookup."""
+from __future__ import annotations
 
-from reditools.region import Region
+from collections import defaultdict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Iterable
+
+    from reditools.region import Region
 
 
 class RegionCollection:
-    """
-    A collection of genomic regions, providing efficient ordered lookup.
-    """
+    """A collection of genomic regions, providing efficient ordered lookup."""
 
     def __init__(self) -> None:
-        """
-        Initialize an empty RegionCollection.
-        """
-
-        self._regions: DefaultDict[str, list[Region]] = defaultdict(list)
+        """Initialize an empty RegionCollection."""
+        self._regions: defaultdict[str, list[Region]] = defaultdict(list)
         self._index = 0
         self._last_contig: str | None = None
         self._sorted = False
 
     def __bool__(self) -> bool:
-        """
-        Check whether the collection is empty.
+        """Check whether the collection is empty.
 
         Returns
         -------
@@ -31,17 +31,13 @@ class RegionCollection:
         return bool(self._regions)
 
     def sort(self) -> None:
-        """
-        Sort all regions within each contig.
-        """
+        """Sort all regions within each contig."""
         for contig, regions in self._regions.items():
             self._regions[contig] = sorted(regions)
         self._sorted = True
 
     def contains(self, contig: str, position: int) -> bool:
-        """
-        Check if a given position is contained within any region of the
-        collection.
+        """Check if a given position is contained within the collection.
 
         This method only works if each subsequent call is done in sorted order.
         Otherwise the output will be inconsistent.
@@ -61,17 +57,17 @@ class RegionCollection:
         if not self._sorted:
             self.sort()
             self._last_contig = contig
-            idx = 0
+            start = 0
         elif contig != self._last_contig:
             self._last_contig = contig
-            idx = 0
+            start = 0
         else:
-            idx = self._index
+            start = self._index
 
 
         for idx, region in enumerate(
-               self._regions[contig][idx:],
-               start=idx,
+               self._regions[contig][start:],
+               start=start,
         ):
             if position < region.start:
                 self._index = idx
@@ -83,8 +79,7 @@ class RegionCollection:
         return False
 
     def add_regions(self, regions: Iterable[Region]) -> None:
-        """
-        Add multiple regions to the collection.
+        """Add multiple regions to the collection.
 
         Parameters
         ----------
@@ -96,8 +91,7 @@ class RegionCollection:
             self._regions[_.contig].append(_)
 
     def get_contig(self, contig: str) -> list[Region]:
-        """
-        Retrieve the regions for a specific chromosome/contig.
+        """Retrieve the regions for a specific chromosome/contig.
 
         Parameters
         ----------
@@ -112,9 +106,9 @@ class RegionCollection:
         return self._regions[contig]
 
     def reset(self) -> None:
-        """
-        Restart the search parameters. RegionCollection requires checks be
-        done in order. This moves the checks back to the beginning of the
-        collections.
+        """Restart the search parameters.
+
+        RegionCollection requires checks be done in order. This function moves
+        the checks back to the beginning of the collections.
         """
         self._last_contig = None

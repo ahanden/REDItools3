@@ -1,26 +1,32 @@
-from itertools import chain
-from typing import Collection, Iterable, Iterator
+"""Fetch reads from multiple alignment files."""
+from __future__ import annotations
 
-from pysam import AlignedSegment
+from itertools import chain
+from math import inf
+from typing import TYPE_CHECKING
 
 from reditools.alignment_file import RTAlignmentFile
-from reditools.region import Region
 
+if TYPE_CHECKING:
+    from typing import Collection, Iterator
+
+    from pysam import AlignedSegment
+
+    from reditools.region import Region
 
 class ReadGroupIter:
-    """
-    Iterator over groups of reads sharing the same reference start position.
+    """Iterator over groups of reads sharing the same reference start position.
 
     Parameters
     ----------
     iterator : Iterator
         An iterator yielding lists of AlignedSegment objects.
     """
-    __slots__ = ('iterator', 'reads', 'reference_start')
 
-    def __init__(self, iterator: Iterator):
-        """
-        Initialize the ReadGroupIter.
+    __slots__ = ("iterator", "reads", "reference_start")
+
+    def __init__(self, iterator: Iterator[list[AlignedSegment]]) -> None:
+        """Initialize the ReadGroupIter.
 
         Parameters
         ----------
@@ -31,8 +37,7 @@ class ReadGroupIter:
         next(self)
 
     def __bool__(self) -> bool:
-        """
-        Check if there are more reads.
+        """Check if there are more reads.
 
         Returns
         -------
@@ -42,8 +47,7 @@ class ReadGroupIter:
         return bool(self.reads)
 
     def __next__(self) -> list[AlignedSegment] | None:
-        """
-        Get the next group of reads.
+        """Get the next group of reads.
 
         Returns
         -------
@@ -52,15 +56,13 @@ class ReadGroupIter:
         """
         self.reads = next(self.iterator, None)
         if self.reads:
-            self.reference_start = self.reads[0].reference_start
+            self.reference_start: int | float = self.reads[0].reference_start
         else:
-            self.reference_start = None
+            self.reference_start = inf
         return self.reads
 
 class FetchGroupIter:
-    """
-    Iterator that merges multiple ReadGroupIter objects, yielding reads grouped
-    by position.
+    """Iterator that merges multiple ReadGroupIter objects.
 
     Parameters
     ----------
@@ -68,9 +70,11 @@ class FetchGroupIter:
         A list of iterators, each yielding reads from an alignment file.
     """
 
-    def __init__(self, fetch_iters: list[Iterator]):
-        """
-        Initialize the FetchGroupIter.
+    def __init__(  # noqa: WPS23
+        self,
+        fetch_iters: list[Iterator[list[AlignedSegment]]],
+    ) -> None:
+        """Initialize the FetchGroupIter.
 
         Parameters
         ----------
@@ -84,8 +88,7 @@ class FetchGroupIter:
                 self.read_groups.append(rgi)
 
     def __iter__(self) -> Iterator[list[AlignedSegment]]:
-        """
-        Return the iterator object itself.
+        """Return the iterator object itself.
 
         Returns
         -------
@@ -96,8 +99,7 @@ class FetchGroupIter:
             yield next(self)
 
     def __bool__(self) -> bool:
-        """
-        Check if there are more read groups.
+        """Check if there are more read groups.
 
         Returns
         -------
@@ -107,9 +109,7 @@ class FetchGroupIter:
         return bool(self.read_groups)
 
     def __next__(self) -> list[AlignedSegment]:
-        """
-        Get the next group of reads from all alignment files for the same
-        position.
+        """Get the next group of reads from all alignment files.
 
         Returns
         -------
@@ -125,12 +125,10 @@ class FetchGroupIter:
             reads.append(rgi.reads)
             if next(rgi) is None:
                 self.read_groups.pop(idx)
-        return list(chain(*reads))  # type: ignore
+        return list(chain(*reads))  # type: ignore[arg-type]
 
 class AlignmentManager:
-    """
-    Manage multiple alignment files and provide unified access to reads by
-    position.
+    """Manage multiple alignment files.
 
     Parameters
     ----------
@@ -141,14 +139,14 @@ class AlignmentManager:
     min_length : int, optional
         Minimum read length (default is 0).
     """
+
     def __init__(
             self,
             excluded_read_names: Collection[str] | None=None,
             min_quality: int=0,
             min_length: int=0,
-    ):  # noqa: WPS475
-        """
-        Initialize the AlignmentManager.
+    ) -> None:  # noqa: WPS475
+        """Initialize the AlignmentManager.
 
         Parameters
         ----------
@@ -162,13 +160,15 @@ class AlignmentManager:
         self._bams: list[RTAlignmentFile] = []
         self.file_list: list[str] = []
         self.next_read_start: int | None = None
-        self.excluded_read_names = excluded_read_names
+        if excluded_read_names is None:
+            self.excluded_read_names: Collection[str] = []
+        else:
+            self.excluded_read_names = excluded_read_names
         self.min_quality = min_quality
         self.min_length = min_length
 
     def add_file(self, fname: str) -> None:
-        """
-        Add an alignment file to the manager.
+        """Add an alignment file to the manager.
 
         Parameters
         ----------
@@ -187,9 +187,8 @@ class AlignmentManager:
     def fetch_by_position(
         self,
         region: Region | str,
-    ) -> Iterable[list[AlignedSegment]]:
-        """
-        Fetch reads from all managed files, grouped by position.
+    ) -> Iterator[list[AlignedSegment]]:
+        """Fetch reads from all managed files, grouped by position.
 
         Parameters
         ----------

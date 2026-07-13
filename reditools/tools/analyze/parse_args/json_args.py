@@ -1,34 +1,34 @@
+"""Save and load CLI options using JSON files."""
 import argparse
 import json
-import os
+from pathlib import Path
 
-json_args_filename = 'cli_args.json'
+json_args_filename = "cli_args.json"
 
 def args_to_json(
     options: argparse.Namespace,
     dirname: str,
     filename: str=json_args_filename,
 ) -> None:
-    """
-    Save commandline arguments to a JSON file.
+    """Save commandline arguments to a JSON file.
 
-    Parameters:
-        options : argparse.Namespace
-            The parsed commandline options.
-        dirname : str
-            Path to save file to.
-        filename : str
-            Name of the file (defaults to json_args_filename)
+    Parameters
+    ----------
+    options : argparse.Namespace
+        The parsed commandline options.
+    dirname : str
+        Path to save file to.
+    filename : str
+        Name of the file (defaults to json_args_filename)
     """
-    with open(os.path.join(dirname, filename), 'w') as stream:
+    with Path(dirname, filename).open("w") as stream:
         json.dump(vars(options), stream)  # noqa: WPS421
 
 def args_from_json(
     dirname: str,
     filename: str=json_args_filename,
 ) -> argparse.Namespace:
-    """
-    Load commandline arguments from a JSON file.
+    """Load commandline arguments from a JSON file.
 
     Parameters
     ----------
@@ -42,6 +42,6 @@ def args_from_json(
     argparse.Namespace
         Commandline arguments for reditools analyze
     """
-    with open(os.path.join(dirname, filename), 'r') as stream:
+    with Path(dirname, filename).open("r") as stream:
         json_args = json.load(stream)
     return argparse.Namespace(**json_args)

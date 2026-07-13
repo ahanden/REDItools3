@@ -1,8 +1,9 @@
+"""Manage multirprocessing Pool for REDItools analysis."""
 import argparse
 import sys
 import traceback
 from functools import partial
-from multiprocessing.context import TimeoutError
+from multiprocessing.context import TimeoutError as MPTimeoutError
 from multiprocessing.pool import Pool
 
 from reditools.tools.analyze.redi_thread import REDIThreadManager
@@ -13,8 +14,7 @@ def run_pool(
     options: argparse.Namespace,
     temp_filemanager: TempFileManager,
 ) -> bool:
-    """
-    Create a pool of threads and analyze the data.
+    """Create a pool of threads and analyze the data.
 
     Parameters
     ----------
@@ -44,9 +44,9 @@ def run_pool(
             pool.close()
             pool.join()
             [_.get(1) for _ in imap_iter]
-    except TimeoutError:
+    except MPTimeoutError:
         return False
-    except Exception:
+    except Exception:  # noqa: BLE001
         if options.debug:
             traceback.print_exception(*sys.exc_info())
         return False
@@ -57,8 +57,7 @@ def terminate_pool(
     debug: bool,
     exc: Exception,
 ) -> None:
-    """
-    Terminates a multiprocessing Pool.
+    """Terminates a multiprocessing Pool.
 
     Parameters
     ----------
@@ -72,6 +71,6 @@ def terminate_pool(
     pool.terminate()
     if debug:
         raise exc.__cause__  # type: ignore[misc]
-    sys.stderr.write(f'[ERROR] ({type(exc)}) {exc}\n')
+    sys.stderr.write(f"[ERROR] ({type(exc)}) {exc}\n")
 
 

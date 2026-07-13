@@ -1,7 +1,12 @@
-import argparse
+"""Check if a position has minimum read depth."""
+from __future__ import annotations
 
-from reditools.compiled_position import RTResult
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    import argparse
+
+    from reditools.compiled_position import RTResult
 
 class CheckMinReadDepth:
     """Check if a position has minimum read depth.
@@ -12,7 +17,7 @@ class CheckMinReadDepth:
         The minimum required read depth.
     """
 
-    def __init__(self, options: argparse.Namespace):
+    def __init__(self, options: argparse.Namespace) -> None:
         """Initialize CheckMinReadDepth.
 
         Parameters
@@ -54,7 +59,7 @@ class CheckMinReadDepth:
         """
         if len(rtresult) < self.min_read_depth:
             return (
-                'DISCARDING COLUMN {} [MIN_READ_DEPTH={}]',
+                "DISCARDING COLUMN {} [MIN_READ_DEPTH={}]",
                 len(rtresult),
                 self.min_read_depth,
             )

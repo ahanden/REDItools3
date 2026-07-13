@@ -1,9 +1,15 @@
-import argparse
+"""Check if a position is within target regions."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from reditools import file_utils
-from reditools.compiled_position import RTResult
 from reditools.region_collection import RegionCollection
 
+if TYPE_CHECKING:
+    import argparse
+
+    from reditools.compiled_position import RTResult
 
 class CheckTargetPositions:
     """Check if a position is within target regions.
@@ -14,7 +20,7 @@ class CheckTargetPositions:
         The collection of target regions.
     """
 
-    def __init__(self, options: argparse.Namespace):
+    def __init__(self, options: argparse.Namespace) -> None:
         """Initialize CheckTargetPositions.
 
         Parameters
@@ -56,5 +62,5 @@ class CheckTargetPositions:
             error message otherwise.
         """
         if not self.regions.contains(rtresult.contig, rtresult.position):
-            return ('DISCARD COLUMN not in target regions',)
+            return ("DISCARD COLUMN not in target regions",)
         return None

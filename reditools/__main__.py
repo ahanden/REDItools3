@@ -1,13 +1,15 @@
+"""CLI entry point for REDItools."""
 
 import sys
 
-from reditools.tools import analyze, annotate, find_repeats, index
+from reditools.tools.analyze import main as analyze
+from reditools.tools.annotate import main as annotate
+from reditools.tools.find_repeats import main as find_repeats
+from reditools.tools.index import main as index
 
 
 def usage() -> None:
-    """
-    Print the usage information for the REDItools3 toolkit.
-    """
+    """Print the usage information for the REDItools3 toolkit."""
     usage_str = """usage: reditools {analyze,find-repeats,index,annotate}
 
 REDItools3
@@ -22,15 +24,15 @@ Run Modes:
 
   annotate           Annotate REDItools RNA output with DNA output
 """
-    print(usage_str)  # noqa: WPS421
+    print(usage_str)  # noqa: WPS421 T201
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     toolkit = {
-        'analyze': analyze,
-        'find-repeats': find_repeats,
-        'index': index,
-        'annotate': annotate,
+        "analyze": analyze,
+        "find-repeats": find_repeats,
+        "index": index,
+        "annotate": annotate,
     }
     if len(sys.argv) > 1:
         command = sys.argv.pop(1)

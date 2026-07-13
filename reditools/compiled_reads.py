@@ -1,9 +1,15 @@
-from typing import Iterator, Optional
+"""Aggregate reads from alignment file(s) that have the same start position."""
+from __future__ import annotations
 
-from pysam import AlignedSegment
+from typing import TYPE_CHECKING
 
 from reditools.compiled_position import CompiledPosition
 from reditools.fasta_file import RTFastaFile
+
+if TYPE_CHECKING:
+    from typing import Iterator
+
+    from pysam import AlignedSegment
 
 
 class RefFetch:
@@ -14,7 +20,7 @@ class RefFetch:
     the AlignedSegment if MD tags are available.
     """
 
-    def __init__(self, fasta_file_path: Optional[str] = None):
+    def __init__(self, fasta_file_path: str | None = None) -> None:
         """Initialize RefFetch.
 
         Parameters
@@ -29,9 +35,10 @@ class RefFetch:
             self._refseq_fn = self.get_ref_from_read
 
     def get_refseq(self, read: AlignedSegment) -> Iterator[str]:
-        """Fetch reference sequence. If a FASTA file was provided in the
-        constructor, this function calla get_ref_from_fasta. Otherwise it
-        calls get_ref_from_read.
+        """Fetch reference sequence.
+
+        If a FASTA file was provided in the constructor, this function calls
+        get_ref_from_fasta. Otherwise it calls get_ref_from_read.
 
         Parameters
         ----------
@@ -80,7 +87,7 @@ class RefFetch:
         pairs = read.get_aligned_pairs(matches_only=True)
         indices = [ref for _, ref in pairs]
         return self.fasta_file.get_base(
-            read.reference_name,  # type: ignore
+            read.reference_name,  # type: ignore[arg-type]
             *indices,
         )
 
@@ -92,7 +99,7 @@ class CompiledReads:
     and strand.
     """
 
-    _strands = ('-', '+', '*')
+    _strands = ("-", "+", "*")
 
     def __init__(
         self,
@@ -100,8 +107,8 @@ class CompiledReads:
         min_base_position: int = 0,
         max_base_position: int = 0,
         min_base_quality: int = 0,
-        fasta_file: Optional[str] = None,
-    ):
+        fasta_file: str | None = None,
+    ) -> None:
         """Initialize CompiledReads.
 
         Parameters
@@ -131,9 +138,9 @@ class CompiledReads:
         self.reference = RefFetch(fasta_file)
 
         self._qc = {
-            'min_base_quality': min_base_quality,
-            'min_base_position': min_base_position,
-            'max_base_position': max_base_position,
+            "min_base_quality": min_base_quality,
+            "min_base_position": min_base_position,
+            "max_base_position": max_base_position,
         }
 
     def add_reads(self, reads: list[AlignedSegment]) -> None:
@@ -151,7 +158,7 @@ class CompiledReads:
                     self._nucleotides[pos] = CompiledPosition(
                         ref=ref,
                         position=pos,
-                        contig=read.reference_name,  # type: ignore
+                        contig=read.reference_name,  # type: ignore[arg-type]
                     )
                 self._nucleotides[pos].add_base(quality, strand, base)
 
@@ -186,20 +193,20 @@ class CompiledReads:
                 self.reference.get_refseq(read),
         ):
             # Right end trim
-            if read_pos > read.query_length - self._qc['max_base_position']:
+            if read_pos > read.query_length - self._qc["max_base_position"]:
                 break
             # Left end trim
-            if read_pos < self._qc['min_base_position']:
+            if read_pos < self._qc["min_base_position"]:
                 continue
-            read_base = read.query_sequence[read_pos]  # type: ignore
-            if ref_base == 'N' or read_base == 'N':
+            read_base = read.query_sequence[read_pos]  # type: ignore[index]
+            if ref_base == "N" or read_base == "N":
                 continue
-            phred = read.query_qualities[read_pos]  # type: ignore
-            if phred < self._qc['min_base_quality']:
+            phred = read.query_qualities[read_pos]  # type: ignore[index]
+            if phred < self._qc["min_base_quality"]:
                 continue
             yield (ref_pos, read_base, phred, ref_base)
 
-    def _unstranded_strand(self, read: AlignedSegment) -> int:
+    def _unstranded_strand(self, read: AlignedSegment) -> int:  # noqa: ARG002
         return 2
 
     def _stranded_strand(self, read: AlignedSegment) -> int:
