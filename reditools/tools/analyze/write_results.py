@@ -15,6 +15,7 @@ def write_results(
         filename: str,
         filters: RTChecks,
         logger: Callable,
+        strand_numbers: bool = False,
 ) -> None:
     """Write analysis results to a file.
 
@@ -28,7 +29,14 @@ def write_results(
         The quality control checks to apply.
     logger : Callable
         The logger function for debug messages.
+    strand_numbers : bool
+        If False, uses -, +, and * for the Strand column.
+        If True, uses 0, 1, and 2 for the Strand column.
     """
+    if strand_numbers:
+        strand_lookup = {"-": 0, "+": 1, "*": 2}
+    else:
+        strand_lookup = {"-": "-", "+": "+", "*": "*"}
     with Path(filename).open("w") as stream:
         writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
         for rt_result in rtresults:
@@ -41,7 +49,7 @@ def write_results(
                 rt_result.contig,
                 rt_result.position + 1,
                 rt_result.reference,
-                rt_result.strand,
+                strand_lookup[rt_result.strand],
                 len(rt_result),
                 f"{rt_result.mean_quality:.2f}",
                 list(rt_result),
