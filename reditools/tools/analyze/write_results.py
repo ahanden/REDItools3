@@ -10,6 +10,14 @@ from reditools.tools.analyze.rtchecks import RTChecks
 
 _empty = "-"
 
+_forward_symbol = "+"
+_reverse_symbol = "-"
+_undetermined_symbol = "*"
+
+_forward_number = "1"
+_reverse_number = "0"
+_undetermined_number = "2"
+
 def write_results(
         rtresults: Iterator[RTResult],
         filename: str,
@@ -34,9 +42,17 @@ def write_results(
         If True, uses 0, 1, and 2 for the Strand column.
     """
     if strand_numbers:
-        strand_lookup = {"-": 0, "+": 1, "*": 2}
+        strand_lookup = {
+            _forward_symbol: _forward_number,
+            _reverse_symbol: _reverse_number,
+            _undetermined_symbol: _undetermined_number,
+        }
     else:
-        strand_lookup = {"-": "-", "+": "+", "*": "*"}
+        strand_lookup = {
+            _forward_symbol: _forward_symbol,
+            _reverse_symbol: _reverse_symbol,
+            _undetermined_symbol: _undetermined_symbol,
+        }
     with Path(filename).open("w") as stream:
         writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
         for rt_result in rtresults:
