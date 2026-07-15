@@ -4,6 +4,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from reditools.compiled_position import CompiledPosition
+from reditools.constants import (
+    forward_strand_symbol,
+    reverse_strand_symbol,
+    undetermined_strand_symbol,
+)
 from reditools.fasta_file import RTFastaFile
 
 if TYPE_CHECKING:
@@ -99,7 +104,11 @@ class CompiledReads:
     and strand.
     """
 
-    _strands = ("-", "+", "*")
+    _strands = (
+        reverse_strand_symbol,
+        forward_strand_symbol,
+        undetermined_strand_symbol,
+    )
 
     def __init__(
         self,

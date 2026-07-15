@@ -5,18 +5,18 @@ from pathlib import Path
 from typing import Callable, Iterator
 
 from reditools.compiled_position import RTResult
+from reditools.constants import (
+    forward_strand_number,
+    forward_strand_symbol,
+    reverse_strand_number,
+    reverse_strand_symbol,
+    undetermined_strand_number,
+    undetermined_strand_symbol,
+)
 from reditools.logger import Logger
 from reditools.tools.analyze.rtchecks import RTChecks
 
 _empty = "-"
-
-_forward_symbol = "+"
-_reverse_symbol = "-"
-_undetermined_symbol = "*"
-
-_forward_number = "1"
-_reverse_number = "0"
-_undetermined_number = "2"
 
 def write_results(
         rtresults: Iterator[RTResult],
@@ -43,15 +43,15 @@ def write_results(
     """
     if strand_numbers:
         strand_lookup = {
-            _forward_symbol: _forward_number,
-            _reverse_symbol: _reverse_number,
-            _undetermined_symbol: _undetermined_number,
+            forward_strand_symbol: forward_strand_number,
+            reverse_strand_symbol: reverse_strand_number,
+            undetermined_strand_symbol: undetermined_strand_number,
         }
     else:
         strand_lookup = {
-            _forward_symbol: _forward_symbol,
-            _reverse_symbol: _reverse_symbol,
-            _undetermined_symbol: _undetermined_symbol,
+            forward_strand_symbol: forward_strand_symbol,
+            reverse_strand_symbol: reverse_strand_symbol,
+            undetermined_strand_symbol: undetermined_strand_symbol,
         }
     with Path(filename).open("w") as stream:
         writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
