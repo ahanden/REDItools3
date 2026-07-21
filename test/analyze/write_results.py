@@ -1,4 +1,5 @@
 """Test methods for analyze tool's write_results()."""
+from __future__ import annotations
 
 import unittest
 from pathlib import Path

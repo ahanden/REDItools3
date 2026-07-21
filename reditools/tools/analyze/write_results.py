@@ -2,7 +2,7 @@
 
 import csv
 from pathlib import Path
-from typing import Callable, Iterator
+from typing import Callable, Iterable
 
 from reditools.compiled_position import RTResult
 from reditools.constants import (
@@ -19,7 +19,7 @@ from reditools.tools.analyze.rtchecks import RTChecks
 _empty = "-"
 
 def write_results(
-        rtresults: Iterator[RTResult],
+        rtresults: Iterable[RTResult],
         filename: str,
         filters: RTChecks,
         logger: Callable,
@@ -29,7 +29,7 @@ def write_results(
 
     Parameters
     ----------
-    rtresults : Iterator[RTResult]
+    rtresults : Iterable[RTResult]
         The analysis results for each position.
     filename : str
         Where to save the results.
