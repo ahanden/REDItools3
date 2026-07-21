@@ -28,20 +28,34 @@ class TestWriteResults(unittest.TestCase):
 
         with NamedTemporaryFile(mode="w", dir=".", delete=False) as temp_file:
             self.fname = temp_file.name
-        self.rtchecks = RTChecks(parse_args(["x.bam"]))
-        self.logger = Logger(Logger.silent_level)
+        self.log = Logger(Logger.silent_level).log
 
     def tearDown(self) -> None:
         """Post-checks cleanup."""
         Path(self.fname).unlink()
+
+    def rtchecks(self, cli_args: list[str]) -> RTChecks:
+        """Create RTChecks object from CLI arguments.
+
+        Parameters
+        ----------
+        cli_args : list[str]
+            Command line arguments.
+
+        Returns
+        -------
+        RTChecks
+            Checks for output filtering.
+        """
+        return RTChecks(parse_args(cli_args))
 
     def test_write_results(self) -> None:
         """Check basic functionality."""
         write_results(
             self.rtresults,
             self.fname,
-            self.rtchecks,
-            self.logger,
+            self.rtchecks(["x.bam"]),
+            self.log,
         )
         with Path(self.fname).open("r") as stream:
             self.assertEqual(
@@ -71,8 +85,8 @@ class TestWriteResults(unittest.TestCase):
         write_results(
             self.rtresults,
             self.fname,
-            self.rtchecks,
-            self.logger,
+            self.rtchecks(["x.bam"]),
+            self.log,
             True,  # noqa: FBT003
         )
         with Path(self.fname).open("r") as stream:
@@ -97,3 +111,13 @@ class TestWriteResults(unittest.TestCase):
                     "AG AT", "0.50", "-", "-", "-", "-", "-",
                 ],
             )
+
+    def test_filter(self) -> None:
+        """Check that RTChecks filters output."""
+        write_results(
+            self.rtresults,
+            self.fname,
+            self.rtchecks(["x.bam", "--min-read-depth", "5"]),
+            self.log,
+        )
+        self.assertEqual(Path(self.fname).stat().st_size, 0)
