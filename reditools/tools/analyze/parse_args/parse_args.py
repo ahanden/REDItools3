@@ -89,6 +89,14 @@ def build_argument_parser() -> argparse.ArgumentParser:  # noqa: WPS213, WPS210
         action="store_true",
         help="Appends results to file (and creates if not existing).",
     )
+    output_group.add_argument(
+        "--number-strand-output",
+        action="store_true",
+        help=(
+            "Replaces the '-', '+', and '*' values with 0, 1, and 2 in the "
+            "Strand column of the output."
+        ),
+    )
     bqf_group = parser.add_argument_group(
         title="Base/Read Quality Controls",
     )

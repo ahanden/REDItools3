@@ -44,6 +44,7 @@ class REDIThread:
         )
         self.rtqc = RTChecks(options)
         self.temp_dir = options.temp_dir
+        self.number_strand_output = options.number_strand_output
 
     def analyze(
             self,
@@ -65,6 +66,7 @@ class REDIThread:
             filename,
             self.rtqc,
             self.rtools.log,
+            self.number_strand_output,
         )
 
 class REDIThreadManager:

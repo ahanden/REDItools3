@@ -5,7 +5,12 @@ from dataclasses import dataclass, field
 from typing import Iterator
 
 from reditools.constants import bases as base_order
-from reditools.constants import comp_map
+from reditools.constants import (
+    comp_map,
+    forward_strand_symbol,
+    reverse_strand_symbol,
+    undetermined_strand_symbol,
+)
 
 
 @dataclass
@@ -78,17 +83,17 @@ class CompiledPosition:
         pos_count = 0
         neg_count = 0
         for strand in self.strands:
-            if strand == "+":
+            if strand == forward_strand_symbol:
                 pos_count += 1
-            elif strand == "-":
+            elif strand == reverse_strand_symbol:
                 neg_count += 1
         if pos_count == neg_count:
-            return "*"
+            return undetermined_strand_symbol
         if pos_count / (pos_count + neg_count) >= threshold:
-            return "+"
+            return forward_strand_symbol
         if neg_count / (pos_count + neg_count) >= threshold:
-            return "-"
-        return "*"
+            return reverse_strand_symbol
+        return undetermined_strand_symbol
 
     def filter_by_strand(self, strand: str) -> None:
         """Filter observations to keep only those from a specific strand.
@@ -98,7 +103,7 @@ class CompiledPosition:
         strand : str
             The strand to keep ('+', '-', or '*'). If '*', no filtering is done.
         """
-        if strand == "*":
+        if strand == undetermined_strand_symbol:
             return
         keep = [
             idx for idx in range(len(self.bases))
