@@ -1,6 +1,7 @@
 """REDItools analyze tool entry point form CLI."""
 from __future__ import annotations
 
+import resource
 import sys
 from typing import TYPE_CHECKING
 
@@ -97,13 +98,10 @@ def analyze(
         temp_dir,
         None if options.resume else region_args(options),
     ) as temp_file_manager:
-        if options.threads > len(temp_file_manager):
-            sys.stderr.write(
-                f"[WARNING] You have assigned {options.threads} threads, "
-                f"But there are only {len(temp_file_manager)} genomic "
-                "range(s). Consider change the value of --window\n",
-            )
-            options.threads = len(temp_file_manager)
+        options.threads = check_thread_limits(
+            options.threads,
+            len(temp_file_manager),
+        )
 
         if not run_pool(options, temp_file_manager):
             return False
@@ -113,3 +111,38 @@ def analyze(
             "a" if options.append_file else "w",
         )
     return True
+
+def check_thread_limits(n_threads: int, n_regions: int) -> int:
+    """Limit the thread count based on user inputs and system limits.
+
+    Thread count is reduced to the minimum of the total regions
+    to analyze and the open file limit of the system.
+
+    Parameters
+    ----------
+    n_threads : int
+        Number of threads from CLI arguments
+    n_regions : int
+        Number of regions to analyze
+
+    Returns
+    -------
+    int
+        Maximum usable threads
+    """
+    n_file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+    if n_file_limit < n_regions and n_file_limit < n_threads:
+        sys.stderr.write(
+            f"[WARNING] Reducing your thread count to {n_file_limit} as your "
+            f"system only allows a maximum of {n_file_limit} files open at "
+            "a time. Consider increasing your system's open file limit.\n",
+        )
+        return n_file_limit
+    if n_regions < n_threads:
+        sys.stderr.write(
+            f"[WARNING] You have assigned {n_threads} threads, "
+            f"But there are only {n_regions} genomic range(s). "
+            "Consider changing the value of --window\n",
+        )
+        return n_regions
+    return n_threads
