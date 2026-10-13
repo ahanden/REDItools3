@@ -127,7 +127,7 @@ class CompiledPosition:
             "-": [],
             "*": [],
         }
-        for idx in range(len(self.bases)):
+        for idx in range(len(self.bases)):  # noqa: WPS518
             idx_by_strand[self.strands[idx]].append(idx)
 
         return tuple(

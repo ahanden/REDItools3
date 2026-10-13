@@ -8,7 +8,7 @@ from reditools.compiled_reads import CompiledReads
 from reditools.logger import Logger
 
 if TYPE_CHECKING:
-    from typing import Iterator
+    from typing import Iterable, Iterator
 
     from reditools.alignment_manager import AlignmentManager
     from reditools.compiled_position import CompiledPosition
@@ -59,23 +59,9 @@ class REDItools:
 
         self._specific_edits = None
 
-        self._proc_fn = self._process_bases
-
         self.reference: str | None = None
 
-    @property
-    def log_level(self) -> str:
-        """Get the current logging level.
-
-        Returns
-        -------
-        str
-            The current logging level.
-        """
-        return self._logger.level
-
-    @log_level.setter
-    def log_level(self, level: str) -> None:
+    def set_log_level(self, level: str) -> None:
         """Set the logging level.
 
         Parameters
@@ -140,14 +126,10 @@ class REDItools:
                     reads[0].reference_start,
                     next_read_start,
             ):
-                if bases.position >= region.start:
-                    for rtresult in self._proc_fn(bases):
-                        self.log(
-                            Logger.debug_level,
-                            "Yielding output for {} reads",
-                            len(rtresult),
-                        )
-                        yield rtresult
+                if bases.position < region.start:
+                    continue
+                rtresults: Iterable[RTResult] = self._process_bases(bases)
+                yield from rtresults
         self.log(
             Logger.info_level,
             "[REGION={}] {} total reads",
@@ -174,21 +156,7 @@ class REDItools:
         """
         self.reference = reference_fname
 
-    def split_by_strand(self, do_split: bool=True) -> None:
-        """Yield one result for each RNA strand (forward and reverse).
-
-        Parameters
-        ----------
-        do_split : bool
-            Whether to split results by strand or consolidate them as a single
-            result.
-        """
-        if do_split:
-            self._proc_fn = self._split_and_process_bases
-        else:
-            self._proc_fn = self._process_bases
-
-    def _process_bases(self, bases: CompiledPosition) -> tuple[RTResult]:
+    def _process_bases(self, bases: CompiledPosition) -> tuple[RTResult, ...]:
         self.log(
             Logger.debug_level,
             "Analyzing position {} {}",
@@ -204,8 +172,25 @@ class REDItools:
             bases.filter_by_strand(strand)
             if self._use_strand_correction and strand == "-":
                 bases.complement()
-        return (RTResult(bases, strand),)
+        rtresult = RTResult(bases, strand)
+        self.log(
+            Logger.debug_level,
+            "Yielding output for {} reads",
+            len(rtresult),
+        )
+        return (rtresult,)
 
-    def _split_and_process_bases(self, bases: CompiledPosition) -> Iterator[RTResult]:
-        for cp in bases.split_by_strand():
-            yield from self._process_bases(cp)
+class SplitREDItools(REDItools):
+    """Alternative main class for running REDItools analysis.
+
+    This implementation will yield output for each strand at each base position.
+    """
+
+    def _process_bases(
+        self,
+        bases: CompiledPosition,
+    ) -> tuple[RTResult, ...]:
+        return tuple(
+            super()._process_bases(cp)[0]
+            for cp in bases.split_by_strand()
+        )
