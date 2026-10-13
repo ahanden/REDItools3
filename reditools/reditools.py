@@ -191,6 +191,6 @@ class SplitREDItools(REDItools):
         bases: CompiledPosition,
     ) -> tuple[RTResult, ...]:
         return tuple(
-            super()._process_bases(cp)[0]
+            super(SplitREDItools, self)._process_bases(cp)[0]
             for cp in bases.split_by_strand()
         )
