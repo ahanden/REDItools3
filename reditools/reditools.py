@@ -59,6 +59,8 @@ class REDItools:
 
         self._specific_edits = None
 
+        self._proc_fn = self._process_bases
+
         self.reference: str | None = None
 
     @property
@@ -138,14 +140,14 @@ class REDItools:
                     reads[0].reference_start,
                     next_read_start,
             ):
-                rtresult = self._process_bases(bases)
                 if bases.position >= region.start:
-                    self.log(
-                        Logger.debug_level,
-                        "Yielding output for {} reads",
-                        len(rtresult),
-                    )
-                    yield rtresult
+                    for rtresult in self._proc_fn(bases):
+                        self.log(
+                            Logger.debug_level,
+                            "Yielding output for {} reads",
+                            len(rtresult),
+                        )
+                        yield rtresult
         self.log(
             Logger.info_level,
             "[REGION={}] {} total reads",
@@ -172,7 +174,21 @@ class REDItools:
         """
         self.reference = reference_fname
 
-    def _process_bases(self, bases: CompiledPosition) -> RTResult:
+    def split_by_strand(self, do_split: bool=True) -> None:
+        """Yield one result for each RNA strand (forward and reverse).
+
+        Parameters
+        ----------
+        do_split : bool
+            Whether to split results by strand or consolidate them as a single
+            result.
+        """
+        if do_split:
+            self._proc_fn = self._split_and_process_bases
+        else:
+            self._proc_fn = self._process_bases
+
+    def _process_bases(self, bases: CompiledPosition) -> tuple[RTResult]:
         self.log(
             Logger.debug_level,
             "Analyzing position {} {}",
@@ -188,4 +204,8 @@ class REDItools:
             bases.filter_by_strand(strand)
             if self._use_strand_correction and strand == "-":
                 bases.complement()
-        return RTResult(bases, strand)
+        return (RTResult(bases, strand),)
+
+    def _split_and_process_bases(self, bases: CompiledPosition) -> Iterator[RTResult]:
+        for cp in bases.split_by_strand():
+            yield from self._process_bases(cp)

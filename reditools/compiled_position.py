@@ -113,14 +113,8 @@ class CompiledPosition:
         self.strands = [self.strands[_] for _ in keep]
         self.bases = [self.bases[_] for _ in keep]
 
-    def split_by_strand(self, strand: str) -> tuple[CompiledPosition, ...]:
+    def split_by_strand(self) -> tuple[CompiledPosition, ...]:
         """Split the CompiledPosition into new objects for each strand.
-
-        Parameters
-        ----------
-        strand : str
-            The strand to keep ('+', '-', or '*'). If '*', the original object
-            is returned.
 
         Returns
         -------
@@ -128,9 +122,6 @@ class CompiledPosition:
             CompiledPositions for each strand.
 
         """
-        if strand == undetermined_strand_symbol:
-            return (self,)
-
         idx_by_strand: dict[str, list[int]] = {
             "+": [],
             "-": [],
@@ -149,6 +140,7 @@ class CompiledPosition:
                 [self.bases[_] for _ in strand_sublist],
             )
             for strand_sublist in idx_by_strand.values()
+            if len(strand_sublist) > 0
         )
 
     def complement(self) -> None:

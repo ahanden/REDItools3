@@ -38,4 +38,6 @@ def setup_rtools(options: argparse.Namespace) -> reditools.REDItools:
     if options.strand_correction:
         rtools.use_strand_correction()
 
+    rtools.split_by_strand(options.separate_strands)
+
     return rtools
