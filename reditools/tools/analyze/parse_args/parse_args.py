@@ -97,6 +97,14 @@ def build_argument_parser() -> argparse.ArgumentParser:  # noqa: WPS213, WPS210
             "Strand column of the output."
         ),
     )
+    output_group.add_argument(
+        "--meanq-by-base",
+        action="store_true",
+        help=(
+            "Replace the MeanQ column with mean PHRED score for reads grouped "
+            "by reported base."
+        ),
+    )
     bqf_group = parser.add_argument_group(
         title="Base/Read Quality Controls",
     )

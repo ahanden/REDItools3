@@ -47,6 +47,7 @@ class REDIThread:
             RTChecks(options),
             self.rtools.log,
             options.number_strand_output,
+            options.meanq_by_base,
         )
 
     def analyze(
