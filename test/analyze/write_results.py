@@ -9,7 +9,7 @@ from reditools.compiled_position import CompiledPosition, RTResult
 from reditools.logger import Logger
 from reditools.tools.analyze.parse_args.parse_args import parse_args
 from reditools.tools.analyze.rtchecks import RTChecks
-from reditools.tools.analyze.write_results import write_results
+from reditools.tools.analyze.write_results import ResultWriter
 
 
 class TestWriteResults(unittest.TestCase):
@@ -52,12 +52,9 @@ class TestWriteResults(unittest.TestCase):
 
     def test_write_results(self) -> None:
         """Check basic functionality."""
-        write_results(
-            self.rtresults,
-            self.fname,
-            self.rtchecks(["x.bam"]),
-            self.log,
-        )
+        writer = ResultWriter(self.rtchecks(["x.bam"]), self.log)
+        writer.write_results(self.rtresults, self.fname)
+
         with Path(self.fname).open("r") as stream:
             self.assertEqual(
                 next(stream).strip().split("\t") ,
@@ -83,13 +80,9 @@ class TestWriteResults(unittest.TestCase):
 
     def test_write_results_numbers(self) -> None:
         """Check strand-number option."""
-        write_results(
-            self.rtresults,
-            self.fname,
-            self.rtchecks(["x.bam"]),
-            self.log,
-            True,  # noqa: FBT003
-        )
+        writer = ResultWriter(self.rtchecks(["x.bam"]), self.log, True)
+        writer.write_results(self.rtresults, self.fname)
+
         with Path(self.fname).open("r") as stream:
             self.assertEqual(
                 next(stream).strip().split("\t") ,
@@ -115,10 +108,9 @@ class TestWriteResults(unittest.TestCase):
 
     def test_filter(self) -> None:
         """Check that RTChecks filters output."""
-        write_results(
-            self.rtresults,
-            self.fname,
+        writer = ResultWriter(
             self.rtchecks(["x.bam", "--min-read-depth", "5"]),
             self.log,
         )
+        writer.write_results(self.rtresults, self.fname)
         self.assertEqual(Path(self.fname).stat().st_size, 0)

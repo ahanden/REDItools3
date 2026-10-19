@@ -9,7 +9,7 @@ from reditools.tools.analyze.setup_alignment_manager import (
     setup_alignment_manager,
 )
 from reditools.tools.analyze.setup_rtools import setup_rtools
-from reditools.tools.analyze.write_results import write_results
+from reditools.tools.analyze.write_results import ResultWriter
 
 if TYPE_CHECKING:
     import argparse
@@ -42,9 +42,12 @@ class REDIThread:
             options.min_read_length,
             options.exclude_reads,
         )
-        self.rtqc = RTChecks(options)
         self.temp_dir = options.temp_dir
-        self.number_strand_output = options.number_strand_output
+        self.writer = ResultWriter(
+            RTChecks(options),
+            self.rtools.log,
+            options.number_strand_output,
+        )
 
     def analyze(
             self,
@@ -60,13 +63,9 @@ class REDIThread:
         filename : str
             Path to save output to.
         """
-        rtresults = self.rtools.analyze(self.sam_manager, region)
-        return write_results(
-            rtresults,
+        return self.writer.write_results(
+            self.rtools.analyze(self.sam_manager, region),
             filename,
-            self.rtqc,
-            self.rtools.log,
-            self.number_strand_output,
         )
 
 class REDIThreadManager:

@@ -245,3 +245,21 @@ class RTResult:
         if len(self) == 0:
             return 0
         return sum(self.cp.qualities) / len(self)
+
+    @property
+    def quality_by_base(self) -> list[float]:
+        """Mean PHRED score broken down by base.
+
+        Returns
+        -------
+        list[float]
+        Mean PHRED score for reads that have A, C, G, and T at this
+        position.
+        """
+        base_buckets: dict[str, list[int]] = { _: [] for _ in base_order }
+        for base, phred in zip(self.cp.bases, self.cp.qualities):
+            base_buckets[base].append(phred)
+        return [
+            sum(_) / len(_) if len(_) > 0 else 0
+            for _ in base_buckets.values()
+        ]
