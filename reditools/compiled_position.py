@@ -144,6 +144,7 @@ class RTResult:
         self,
         compiled_position: CompiledPosition,
         strand: str,
+        noise_threshold: float=0,
     ) -> None:
         """Initialize RTResult.
 
@@ -172,7 +173,9 @@ class RTResult:
                 key=self.__getitem__,
                 reverse=True,
             )
-            if self[_] and _ != self.reference
+            if self[_] and \
+                self[_] / (self[_] + self[self.cp.ref]) > noise_threshold and  # noqa: WPS221 \
+                _ != self.reference
         ]
 
     def __getitem__(self, base: str) -> int:
