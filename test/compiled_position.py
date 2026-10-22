@@ -94,7 +94,7 @@ class TestCompiledPosition(unittest.TestCase):
         self.cp.add_base(10, "+", "C")
         self.cp.add_base(10, "+", "A")
         rtresult = RTResult(self.cp, "*")
-        self.assertEqual(rtresult.variants, ["AC"])
+        self.assertEqual(rtresult.variants, ["C"])
 
     def test_edit_ratio(self) -> None:
         """Check edit_ratio cacluation from RTResult."""

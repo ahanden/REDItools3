@@ -53,7 +53,7 @@ class CheckVariants:
         )
         if bad_alt is not None:
             raise BadVariantError(bad_alt)
-        self.variants = {_.upper() for _ in options.variants}
+        self.variants = {tuple(_.upper()) for _ in options.variants}
 
     @classmethod
     def is_needed(cls, options: argparse.Namespace) -> bool:

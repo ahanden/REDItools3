@@ -50,7 +50,7 @@ class TestREDItools(unittest.TestCase):
         rtresult = self.rtools._process_bases(self.cp)
         self.assertEqual(rtresult.reference, "A")
         self.assertEqual(rtresult.strand, "*")
-        self.assertEqual(rtresult.variants, ["AG", "AT"])
+        self.assertEqual(rtresult.variants, ["G", "T"])
 
     def test_strand_filter(self) -> None:
         """Check strand modes."""
@@ -59,7 +59,7 @@ class TestREDItools(unittest.TestCase):
         rtresult = self.rtools._process_bases(self.cp)
         self.assertEqual(rtresult.strand, "-")
         self.assertEqual(rtresult.reference, "A")
-        self.assertEqual(rtresult.variants, ["AT"])
+        self.assertEqual(rtresult.variants, ["T"])
 
     def test_strand_correction(self) -> None:
         """Check strand correction mode."""
@@ -69,7 +69,7 @@ class TestREDItools(unittest.TestCase):
         rtresult = self.rtools._process_bases(self.cp)
         self.assertEqual(rtresult.strand, "-")
         self.assertEqual(rtresult.reference, "T")
-        self.assertEqual(rtresult.variants, ["TA"])
+        self.assertEqual(rtresult.variants, ["A"])
 
     def test_add_reference(self) -> None:
         """Check using MD tags and FASTA files as references."""

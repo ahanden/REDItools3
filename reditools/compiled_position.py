@@ -137,7 +137,7 @@ class RTResult:
     counter : dict
         A dictionary counting occurrences of each nucleotide.
     variants : list
-        A list of observed variants (e.g., ['AG']).
+        A list of observed alternate bases ('A', 'C', 'G', and/or 'T').
     """
 
     def __init__(
@@ -167,8 +167,7 @@ class RTResult:
             self.counter[base] += 1
 
         self.variants = [
-            f"{self.reference}{_}"
-            for _ in sorted(
+            _ for _ in sorted(
                 base_order,
                 key=self.__getitem__,
                 reverse=True,
