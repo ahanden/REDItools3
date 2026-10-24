@@ -111,3 +111,21 @@ class TestREDItools(unittest.TestCase):
             Region.from_string("chr1:8-20", self.bam_file),
         ))
         self.assertEqual(len(rtresults), 3)
+
+    def test_noise_threshold(self) -> None:
+        """Check noise threshold feature."""
+        self.rtools.noise_threshold = 0.1
+        self.assertEqual(
+            self.rtools._process_bases(self.cp).variants,
+            ["G", "T"],
+        )
+        self.rtools.noise_threshold = 0.3
+        self.assertEqual(
+            self.rtools._process_bases(self.cp).variants,
+            ["G"],
+        )
+        self.rtools.noise_threshold = 0.5
+        self.assertEqual(
+            self.rtools._process_bases(self.cp).variants,
+            [],
+        )

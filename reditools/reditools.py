@@ -55,7 +55,7 @@ class REDItools:
         self.min_base_position = 0
         self.max_base_position = 0
 
-        self.noise_threshold = 0
+        self.noise_threshold: float = 0
 
         self._min_read_quality = 0
 

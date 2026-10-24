@@ -125,3 +125,22 @@ class TestCompiledPosition(unittest.TestCase):
         self.cp.add_base(30, "+", "C")
         rtresult = RTResult(self.cp, "*")
         self.assertEqual(rtresult.mean_quality, 20)
+
+
+    def test_noise_threshold(self) -> None:
+        """Check noise threshold feature."""
+        for base in ("A", "A", "A", "T", "G", "G"):
+            self.cp.add_base(10, "+", base)
+
+        self.assertEqual(
+            RTResult(self.cp, "*", 0.1).variants,
+            ["G", "T"],
+        )
+        self.assertEqual(
+            RTResult(self.cp, "*", 0.3).variants,
+            ["G"],
+        )
+        self.assertEqual(
+            RTResult(self.cp, "*", 0.4).variants,
+            [],
+        )
